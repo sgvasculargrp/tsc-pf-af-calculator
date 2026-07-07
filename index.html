@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  html,body{margin:0;padding:0;background:#eef1f4;}
+  *{box-sizing:border-box;}
+  a{color:#17788a;} a:hover{color:#0f5b69;}
+  input,select,button{font-family:inherit;}
+  select{-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%2364707c'/></svg>");background-repeat:no-repeat;background-position:right 10px center;}
+  ::-webkit-scrollbar{width:10px;height:10px;}
+  ::-webkit-scrollbar-thumb{background:#cfd6dd;border-radius:6px;border:2px solid #eef1f4;}
+</style>
+<script src="moh-data.js"></script>
+<script src="aia-data.js"></script>
+<script src="ntucext-data.js"></script>
+<script src="mhcsl-data.js"></script>
+<script src="rates.js"></script>
+</helmet>
+
+<div style="display:flex;min-height:100vh;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#1b232c;background:#eef1f4;">
+
+  <!-- SIDEBAR -->
+  <aside style="width:236px;flex-shrink:0;background:#ffffff;border-right:1px solid #e3e8ed;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;">
+    <div style="padding:20px 18px 14px;border-bottom:1px solid #eef1f4;">
+      <div style="display:flex;align-items:center;gap:9px;">
+        <div style="width:26px;height:26px;border-radius:7px;background:#17788a;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;">₣</div>
+        <div>
+          <div style="font-size:13px;font-weight:700;letter-spacing:-.01em;">PF &amp; AF Calculator</div>
+          <div style="font-size:10px;color:#8a96a2;">Singapore insurance fees</div>
+        </div>
+      </div>
+    </div>
+    <nav style="padding:10px 10px 20px;flex:1;">
+      <sc-for list="{{ nav }}" as="grp" hint-placeholder-count="3">
+        <div style="margin-top:12px;">
+          <div style="font-size:9.5px;font-weight:700;color:#9aa5b1;letter-spacing:.11em;text-transform:uppercase;padding:6px 8px 5px;">{{ grp.label }}</div>
+          <div style="display:flex;flex-direction:column;gap:2px;">
+            <sc-for list="{{ grp.items }}" as="it" hint-placeholder-count="4">
+              <button onClick="{{ it.onSelect }}" style="{{ it.style }}">
+                <span style="{{ it.dotStyle }}"></span>
+                <span style="flex:1;text-align:left;">{{ it.name }}</span>
+                <sc-if value="{{ it.pending }}" hint-placeholder-val="{{ false }}"><span style="font-size:8.5px;font-weight:600;background:#fdeccd;color:#9a6a00;border-radius:4px;padding:2px 6px;">data</span></sc-if>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </nav>
+    <div style="padding:12px 16px;border-top:1px solid #eef1f4;font-size:9.5px;color:#9aa5b1;line-height:1.5;">
+      <span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:7px;height:7px;border-radius:50%;background:#1d9e75;display:inline-block;"></span>Live</span>
+      &nbsp;&nbsp;
+      <span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:7px;height:7px;border-radius:50%;background:#e0a92b;display:inline-block;"></span>Needs data</span>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main style="flex:1;min-width:0;display:flex;flex-direction:column;">
+
+    <!-- header -->
+    <header style="background:#ffffff;border-bottom:1px solid #e3e8ed;padding:18px 28px;position:sticky;top:0;z-index:5;">
+      <div style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:220px;">
+          <div style="font-size:11px;font-weight:600;color:#17788a;letter-spacing:.04em;text-transform:uppercase;">{{ header.kicker }}</div>
+          <h1 style="margin:3px 0 0;font-size:22px;font-weight:700;letter-spacing:-.02em;">{{ header.title }}</h1>
+          <div style="margin-top:7px;display:inline-flex;align-items:center;gap:8px;font-size:12px;color:#5b6672;padding:4px 11px;border-radius:20px;background:{{ header.badgeBg }};color:{{ header.badgeColor }};">{{ header.badge }}</div>
+        </div>
+        <sc-if value="{{ showCalc }}" hint-placeholder-val="{{ true }}"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:8px;background:#f4f6f8;border:1px solid #e3e8ed;border-radius:9px;padding:7px 11px;">
+            <label style="font-size:11px;font-weight:600;color:#5b6672;cursor:pointer;display:flex;align-items:center;gap:6px;">
+              <input type="checkbox" checked="{{ gst.on }}" onChange="{{ gst.onToggle }}" style="accent-color:#17788a;width:15px;height:15px;">GST
+            </label>
+            <input type="number" value="{{ gst.rate }}" onInput="{{ gst.onRate }}" step="0.5" min="0" max="30" style="width:52px;padding:5px 7px;border:1px solid #d6dde4;border-radius:6px;font-size:12px;text-align:right;font-family:'IBM Plex Mono',monospace;">
+            <span style="font-size:12px;color:#8a96a2;font-weight:600;">%</span>
+          </div>
+          <button onClick="{{ onSave }}" style="display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border:1px solid #d6dde4;background:#fff;border-radius:9px;font-size:12px;font-weight:600;color:#1b232c;cursor:pointer;">Save</button>
+          <button onClick="{{ onExport }}" style="display:inline-flex;align-items:center;gap:6px;padding:9px 15px;border:none;background:#17788a;color:#fff;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer;">Export PDF</button>
+        </div></sc-if>
+      </div>
+    </header>
+
+    <sc-if value="{{ showMoh }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:22px 28px 60px;">
+        <section style="background:#fff;border:1px solid #e3e8ed;border-radius:12px;overflow:hidden;">
+          <div style="padding:15px 18px;border-bottom:1px solid #eef1f4;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:200px;">
+              <div style="font-size:14px;font-weight:700;">MOH Benchmark Fees</div>
+              <div style="font-size:11.5px;color:#8a96a2;margin-top:2px;">Effective 01/01/2025 · {{ moh.total }} procedures · Surgeon (PF) &amp; Anaesthetist (AF) lower–upper ranges</div>
+            </div>
+            <input value="{{ moh.query }}" onInput="{{ moh.onSearch }}" placeholder="Search TOSP code, description or table (e.g. SA728S, breast, 4A)" style="flex:1;min-width:260px;max-width:440px;padding:9px 13px;border:1px solid #d6dde4;border-radius:9px;font-size:12.5px;background:#fbfcfd;">
+          </div>
+          <div style="padding:8px 18px;font-size:11px;color:#8a96a2;border-bottom:1px solid #eef1f4;">Showing {{ moh.shown }} of {{ moh.count }} matching · <sc-if value="{{ moh.capped }}" hint-placeholder-val="{{ false }}"><span style="color:#9a6a00;">refine your search to see all matches</span></sc-if></div>
+          <div style="overflow:auto;max-height:64vh;">
+            <table style="width:100%;border-collapse:collapse;min-width:820px;">
+              <thead>
+                <tr>
+                  <th style="position:sticky;top:0;padding:9px 12px;font-size:9.5px;font-weight:700;color:#fff;background:#2a3542;text-align:left;white-space:nowrap;">TOSP Code</th>
+                  <th style="position:sticky;top:0;padding:9px 12px;font-size:9.5px;font-weight:700;color:#fff;background:#2a3542;text-align:left;">Description</th>
+                  <th style="position:sticky;top:0;padding:9px 12px;font-size:9.5px;font-weight:700;color:#fff;background:#2a3542;text-align:center;">Table</th>
+                  <th style="position:sticky;top:0;padding:9px 12px;font-size:9.5px;font-weight:700;color:#fff;background:#2a3542;text-align:right;white-space:nowrap;">PF Lower</th>
+                  <th style="position:sticky;top:0;padding:9px 12px;font-size:9.5px;font-weight:700;color:#fff;background:#2a3542;text-align:right;white-space:nowrap;">PF Upper</th>
+                  <th style="position:sticky;top:0;padding:9px 12px;font-size:9.5px;font-weight:700;color:#fff;background:#2a3542;text-align:right;white-space:nowrap;">AF Lower</th>
+                  <th style="position:sticky;top:0;padding:9px 12px;font-size:9.5px;font-weight:700;color:#fff;background:#2a3542;text-align:right;white-space:nowrap;">AF Upper</th>
+                </tr>
+              </thead>
+              <tbody>
+                <sc-for list="{{ moh.rows }}" as="m" hint-placeholder-count="12">
+                  <tr style="{{ m.rowBg }}">
+                    <td style="padding:8px 12px;border-bottom:1px solid #eef1f4;font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:600;color:#17788a;white-space:nowrap;">{{ m.code }}</td>
+                    <td style="padding:8px 12px;border-bottom:1px solid #eef1f4;font-size:11px;color:#455160;line-height:1.4;">{{ m.desc }}</td>
+                    <td style="padding:8px 12px;border-bottom:1px solid #eef1f4;font-size:11px;text-align:center;font-weight:600;color:#1b232c;">{{ m.table }}</td>
+                    <td style="padding:8px 12px;border-bottom:1px solid #eef1f4;font-size:11px;text-align:right;font-family:'IBM Plex Mono',monospace;color:#1b232c;">{{ m.pl }}</td>
+                    <td style="padding:8px 12px;border-bottom:1px solid #eef1f4;font-size:11px;text-align:right;font-family:'IBM Plex Mono',monospace;color:#1b232c;">{{ m.pu }}</td>
+                    <td style="padding:8px 12px;border-bottom:1px solid #eef1f4;font-size:11px;text-align:right;font-family:'IBM Plex Mono',monospace;color:#5b6672;">{{ m.al }}</td>
+                    <td style="padding:8px 12px;border-bottom:1px solid #eef1f4;font-size:11px;text-align:right;font-family:'IBM Plex Mono',monospace;color:#5b6672;">{{ m.au }}</td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ showCalc }}" hint-placeholder-val="{{ true }}"><div style="padding:22px 28px 60px;display:flex;gap:22px;align-items:flex-start;flex-wrap:wrap;">
+      <div style="flex:1;min-width:520px;display:flex;flex-direction:column;gap:18px;">
+
+        <!-- pending banner -->
+        <sc-if value="{{ pending }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#fffaf0;border:1px solid #f0d9a8;border-radius:12px;padding:18px 20px;display:flex;gap:13px;align-items:flex-start;">
+            <div style="width:22px;height:22px;border-radius:50%;background:#e0a92b;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;">!</div>
+            <div>
+              <div style="font-size:14px;font-weight:700;color:#7a5200;">{{ header.insurer }} — rates not yet configured</div>
+              <div style="font-size:12.5px;color:#8a6a2a;margin-top:4px;line-height:1.55;">{{ pendingReason }}</div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- STEP 1 -->
+        <sc-if value="{{ showStep1 }}" hint-placeholder-val="{{ false }}">
+          <section style="background:#fff;border:1px solid #e3e8ed;border-radius:12px;overflow:hidden;">
+            <div style="display:flex;align-items:center;gap:11px;padding:14px 18px;border-bottom:1px solid #eef1f4;background:#f7fafb;">
+              <span style="width:23px;height:23px;border-radius:6px;background:#2563a8;color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;">1</span>
+              <div style="font-size:14px;font-weight:700;">Consultation Fee</div>
+            </div>
+            <div style="padding:9px 18px;font-size:11.5px;font-style:italic;color:#64707c;background:{{ step1.noteBg }};border-bottom:1px solid #eef1f4;line-height:1.5;">{{ step1.note }}</div>
+            <div style="padding:6px 18px 14px;">
+              <sc-for list="{{ step1.fields }}" as="f" hint-placeholder-count="4">
+                <div style="display:flex;align-items:center;gap:14px;padding:9px 0;border-bottom:1px solid #f2f5f7;">
+                  <div style="width:210px;font-size:12.5px;color:{{ f.labelColor }};">{{ f.label }}</div>
+                  <div style="flex:1;max-width:280px;">
+                    <sc-if value="{{ f.disabled }}" hint-placeholder-val="{{ true }}">
+                      <div style="padding:8px 11px;border:1px dashed #dfe4e9;border-radius:7px;font-size:12.5px;color:#aab3bc;background:#f7f9fa;">N/A</div>
+                    </sc-if>
+                    <sc-if value="{{ f.enabled }}" hint-placeholder-val="{{ false }}">
+                      <select value="{{ f.value }}" onChange="{{ f.onChange }}" style="width:100%;padding:8px 30px 8px 11px;border:1px solid #d6dde4;border-radius:7px;font-size:12.5px;font-weight:600;color:#17788a;background-color:#fff;cursor:pointer;">
+                        <sc-for list="{{ f.options }}" as="o" hint-placeholder-count="3"><option value="{{ o }}">{{ o }}</option></sc-for>
+                      </select>
+                    </sc-if>
+                  </div>
+                </div>
+              </sc-for>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding:12px 15px;background:#eef4fb;border-radius:9px;">
+                <div style="font-size:13px;font-weight:700;color:#2563a8;">Total consultation fee (ex-GST)</div>
+                <div style="font-size:17px;font-weight:700;color:#2563a8;font-family:'IBM Plex Mono',monospace;">{{ step1.total }}</div>
+              </div>
+            </div>
+          </section>
+        </sc-if>
+
+        <!-- STEP 2 -->
+        <sc-if value="{{ showStep2 }}" hint-placeholder-val="{{ true }}">
+          <section style="background:#fff;border:1px solid #e3e8ed;border-radius:12px;overflow:hidden;">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #eef1f4;background:#f6fbf8;">
+              <div style="display:flex;align-items:center;gap:11px;">
+                <span style="width:23px;height:23px;border-radius:6px;background:#1a7a5e;color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ step2.num }}</span>
+                <div style="font-size:14px;font-weight:700;">Surgeon (PF) &amp; Anaesthetist (AF) Fees</div>
+              </div>
+              <button onClick="{{ onClearRows }}" style="font-size:11px;color:#64707c;background:none;border:1px solid #e3e8ed;border-radius:7px;padding:5px 10px;cursor:pointer;">Clear rows</button>
+            </div>
+            <sc-if value="{{ step2.hasSelector }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:center;gap:12px;padding:11px 18px;background:#f6fbf8;border-bottom:1px solid #eef1f4;">
+                <span style="font-size:12px;font-weight:600;color:#1a4731;">{{ step2.selLabel }}</span>
+                <select value="{{ step2.selValue }}" onChange="{{ step2.onSelect }}" style="padding:7px 30px 7px 11px;border:1px solid #cfe0d6;border-radius:7px;font-size:12.5px;font-weight:600;color:#1a7a5e;background-color:#fff;cursor:pointer;min-width:260px;">
+                  <sc-for list="{{ step2.selOptions }}" as="o" hint-placeholder-count="2"><option value="{{ o }}">{{ o }}</option></sc-for>
+                </select>
+              </div>
+            </sc-if>
+            <sc-if value="{{ step2.dataNote }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:9px 18px;font-size:11.5px;color:#8a6a2a;background:#fffaf0;border-bottom:1px solid #f0e2c8;line-height:1.5;">ℹ&nbsp; {{ step2.dataNote }}</div>
+            </sc-if>
+            <div style="overflow-x:auto;">
+              <table style="width:100%;border-collapse:collapse;min-width:640px;">
+                <thead>
+                  <tr>
+                    <sc-for list="{{ step2.headers }}" as="h" hint-placeholder-count="7">
+                      <th style="{{ h.style }}">{{ h.text }}</th>
+                    </sc-for>
+                  </tr>
+                </thead>
+                <tbody>
+                  <sc-for list="{{ step2.rows }}" as="row" hint-placeholder-count="5">
+                    <tr style="{{ row.rowStyle }}">
+                      <td style="padding:6px 8px 6px 14px;border-bottom:1px solid #eef1f4;">
+                        <input value="{{ row.code }}" onInput="{{ row.onCode }}" placeholder="{{ row.placeholder }}" style="width:100%;padding:7px 9px;border:1px solid #dbe2e8;border-radius:6px;font-size:12px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-transform:uppercase;background:#fffdf3;color:#1b232c;">
+                        <sc-if value="{{ row.hasHint }}" hint-placeholder-val="{{ false }}"><div style="font-size:9.5px;color:#9aa5b1;margin-top:3px;padding-left:2px;">{{ row.hint }}</div></sc-if>
+                      </td>
+                      <sc-for list="{{ row.cells }}" as="c" hint-placeholder-count="6">
+                        <td style="{{ c.tdStyle }}">
+                          <sc-if value="{{ c.isToggle }}" hint-placeholder-val="{{ false }}">
+                            <select value="{{ c.value }}" onChange="{{ c.onChange }}" style="width:100%;max-width:160px;padding:5px 22px 5px 8px;border:1px solid #d6dde4;border-radius:6px;font-size:10.5px;font-weight:600;color:#17788a;background-color:#fffdf3;cursor:pointer;">
+                              <sc-for list="{{ c.options }}" as="o" hint-placeholder-count="3"><option value="{{ o }}">{{ o }}</option></sc-for>
+                            </select>
+                          </sc-if>
+                          <sc-if value="{{ c.isText }}" hint-placeholder-val="{{ true }}"><span style="{{ c.style }}">{{ c.text }}</span></sc-if>
+                        </td>
+                      </sc-for>
+                    </tr>
+                  </sc-for>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </sc-if>
+
+      </div>
+
+      <!-- RIGHT RAIL: totals + saved -->
+      <aside style="width:320px;flex-shrink:0;display:flex;flex-direction:column;gap:18px;position:sticky;top:100px;">
+        <sc-if value="{{ showStep2 }}" hint-placeholder-val="{{ true }}">
+          <section style="background:#fff;border:1px solid #e3e8ed;border-radius:12px;overflow:hidden;">
+            <div style="padding:13px 17px;border-bottom:1px solid #eef1f4;font-size:13px;font-weight:700;">Summary</div>
+            <div style="padding:14px 17px;display:flex;flex-direction:column;gap:9px;">
+              <sc-for list="{{ totals }}" as="t" hint-placeholder-count="4">
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                  <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#5b6672;"><span style="width:8px;height:8px;border-radius:2px;background:{{ t.dot }};display:inline-block;"></span>{{ t.label }}</div>
+                  <div style="font-size:13px;font-weight:600;font-family:'IBM Plex Mono',monospace;color:{{ t.color }};">{{ t.value }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="padding:15px 17px;background:#1b232c;color:#fff;">
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <div style="font-size:12px;color:#aeb8c2;">{{ grand.label }}</div>
+                <div style="font-size:20px;font-weight:700;font-family:'IBM Plex Mono',monospace;">{{ grand.ex }}</div>
+              </div>
+              <sc-if value="{{ gst.on }}" hint-placeholder-val="{{ true }}">
+                <div style="margin-top:11px;padding-top:11px;border-top:1px solid #34404d;">
+                  <div style="display:flex;align-items:center;justify-content:space-between;font-size:11.5px;color:#8fa0b0;"><span>+ GST ({{ gst.rate }}%)</span><span style="font-family:'IBM Plex Mono',monospace;">{{ grand.gstAmt }}</span></div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-top:7px;"><span style="font-size:12.5px;font-weight:600;color:#e6ebf0;">Total incl. GST</span><span style="font-size:18px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:#5fd4c4;">{{ grand.incl }}</span></div>
+                </div>
+              </sc-if>
+            </div>
+          </section>
+        </sc-if>
+
+        <section style="background:#fff;border:1px solid #e3e8ed;border-radius:12px;overflow:hidden;">
+          <div style="padding:13px 17px;border-bottom:1px solid #eef1f4;display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-size:13px;font-weight:700;">Saved calculations</span>
+            <span style="font-size:11px;color:#9aa5b1;">{{ savedCount }}</span>
+          </div>
+          <sc-if value="{{ hasSaved }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;">
+              <sc-for list="{{ saved }}" as="s" hint-placeholder-count="2">
+                <div style="padding:11px 17px;border-bottom:1px solid #f2f5f7;display:flex;align-items:center;gap:10px;">
+                  <button onClick="{{ s.onLoad }}" style="flex:1;text-align:left;background:none;border:none;cursor:pointer;padding:0;">
+                    <div style="font-size:12.5px;font-weight:600;color:#1b232c;">{{ s.label }}</div>
+                    <div style="font-size:10.5px;color:#9aa5b1;margin-top:2px;">{{ s.sub }}</div>
+                  </button>
+                  <div style="font-size:12.5px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:#17788a;">{{ s.amount }}</div>
+                  <button onClick="{{ s.onDelete }}" style="width:24px;height:24px;border-radius:6px;border:1px solid #eef1f4;background:#fff;color:#c0392b;cursor:pointer;font-size:14px;line-height:1;">×</button>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ noSaved }}" hint-placeholder-val="{{ true }}">
+            <div style="padding:22px 17px;text-align:center;font-size:11.5px;color:#aab3bc;">No saved calculations yet.<br>Press <b style="color:#5b6672;">Save</b> to keep the current one.</div>
+          </sc-if>
+        </section>
+      </aside>
+    </div></sc-if>
+
+    <!-- FOOTNOTES -->
+    <sc-if value="{{ hasNotes }}" hint-placeholder-val="{{ true }}">
+      <div style="padding:0 28px 50px;">
+        <section style="background:#fffdf9;border:1px solid #f0e2c8;border-radius:12px;overflow:hidden;">
+          <div style="padding:13px 18px;border-bottom:1px solid #f0e6d2;font-size:13px;font-weight:700;color:#7a4000;background:#fdf3e3;">{{ notesTitle }}</div>
+          <div style="display:flex;flex-direction:column;">
+            <sc-for list="{{ footnotes }}" as="fn" hint-placeholder-count="4">
+              <div style="display:flex;gap:16px;padding:13px 18px;border-bottom:1px solid #f5ecdb;align-items:flex-start;">
+                <div style="width:180px;flex-shrink:0;font-size:11.5px;font-weight:700;color:#5a3a00;">{{ fn.title }}</div>
+                <div style="flex:1;font-size:11.5px;color:#6a5230;line-height:1.55;">{{ fn.body }}</div>
+                <div style="flex-shrink:0;font-size:10px;font-weight:700;color:#b0703a;background:#fbe6cf;border-radius:5px;padding:3px 9px;white-space:nowrap;">{{ fn.tag }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+      </div>
+    </sc-if>
+
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    var saved = [];
+    try { saved = JSON.parse(localStorage.getItem('pfaf_saved') || '[]'); } catch(e){}
+    var st = null;
+    try { st = JSON.parse(localStorage.getItem('pfaf_state') || 'null'); } catch(e){}
+    this.state = st && st.mode ? Object.assign({ saved: saved }, st) : {
+      mode: 'selfpay',
+      personal: 'Great Eastern',
+      corp: 'Alliance',
+      step1: { vt:'', ti:'', vp:'', d:'1' },
+      codes: ['','','','',''],
+      toggles: ['','','','',''],
+      selector: '',
+      mohQuery: '',
+      gst: 9, gstOn: true,
+      saved: saved
+    };
+    this.state.saved = saved;
+    if(!this.state.toggles) this.state.toggles = ['','','','',''];
+    if(this.state.selector == null) this.state.selector = '';
+  }
+
+  componentDidMount(){
+    if (!window.CALC) { this._t = setInterval(()=>{ if(window.CALC){ clearInterval(this._t); this.forceUpdate(); } }, 60); }
+    if (this.state.mode !== 'selfpay' && (!this.state.step1 || !this.state.step1.vt)) this._resetStep1(this.state.mode==='corp'?this.state.corp:this.state.personal);
+  }
+
+  _persist(){ try { var s=Object.assign({},this.state); localStorage.setItem('pfaf_state', JSON.stringify(s)); } catch(e){} }
+  set(patch, cb){ this.setState(patch, ()=>{ this._persist(); if(cb)cb(); }); }
+
+  activeKey(){
+    var m=this.state.mode;
+    if(m==='selfpay') return 'SelfPay';
+    if(m==='corp') return this.state.corp;
+    return this.state.personal;
+  }
+  activeInsurerName(){
+    var m=this.state.mode;
+    if(m==='selfpay') return 'Self Pay';
+    if(m==='corp') return this.state.corp;
+    return this.state.personal;
+  }
+  activeMeta(){
+    var m=this.state.mode, C=window.CALC;
+    if(m==='selfpay') return { status:'ready', rateDate:'01/01/2025', typeLabel:'Self Pay · MOH Benchmark Fees' };
+    var reg = m==='corp' ? C.CORPORATE[this.state.corp] : C.PERSONAL[this.state.personal];
+    return { status:reg.status, reason:reg.reason, rateDate:reg.rateDate, typeLabel:(m==='corp'?'Corporate':'Personal')+' Insurance' };
+  }
+
+  _resetStep1(key){
+    var C=window.CALC; var spec = C.step1spec(key);
+    if(!spec){ this.set({ step1:{vt:'',ti:'',vp:'',d:'1'} }); return; }
+    var vt = spec.defaultVt || (spec.visitTypes?spec.visitTypes[0]:'');
+    var ti = spec.timing ? (spec.timing(vt)?spec.timing(vt)[0]:'') : '';
+    var vp = spec.vpd ? (spec.vpd(vt)?spec.vpd(vt)[0]:'') : '';
+    this.set({ step1:{ vt:vt, ti:ti, vp:vp, d:'1' } });
+  }
+
+  pickMode(mode, name){
+    var patch={ mode:mode, toggles:['','','','',''], selector:'' };
+    if(mode==='personal') patch.personal=name;
+    if(mode==='corp') patch.corp=name;
+    this.set(patch, ()=>{ if(mode!=='selfpay') this._resetStep1(this.activeKey()); });
+  }
+  setToggle(i, val){ var t=this.state.toggles.slice(); t[i]=val; this.set({ toggles:t }); }
+  setSelector(val){ this.set({ selector:val }); }
+  effToggle(spec, i){ var d=spec&&spec.toggle?spec.toggle(i):null; if(!d)return null; var v=this.state.toggles[i]; return (v&&d.indexOf(v)!==-1)?v:(spec.toggleDef?spec.toggleDef(i):d[0]); }
+  effSelector(spec){ if(!spec||!spec.sel)return null; var v=this.state.selector; return (v&&spec.sel.options.indexOf(v)!==-1)?v:spec.sel.def; }
+
+  setField(field, val){
+    var s1=Object.assign({}, this.state.step1);
+    s1[field]=val;
+    if(field==='vt'){
+      var C=window.CALC, spec=C.step1spec(this.activeKey());
+      if(spec){
+        var to = spec.timing?spec.timing(val):null;
+        var vo = spec.vpd?spec.vpd(val):null;
+        s1.ti = to?to[0]:'';
+        s1.vp = vo?vo[0]:'';
+      }
+    }
+    this.set({ step1:s1 });
+  }
+  setCode(i, val){
+    var codes=this.state.codes.slice(); codes[i]=String(val).toUpperCase(); this.set({ codes:codes });
+  }
+  clearRows(){ this.set({ codes:['','','','',''] }); }
+  setGstRate(v){ var n=parseFloat(v); this.set({ gst: isNaN(n)?0:n }); }
+  toggleGst(){ this.set({ gstOn: !this.state.gstOn }); }
+
+  money(v){
+    if(typeof v==='number' && isFinite(v)) return 'S$'+v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    return String(v);
+  }
+  cellColor(v){ return (typeof v==='number' && isFinite(v)) ? '#1b232c' : '#aab3bc'; }
+
+  computeRows(){
+    var C=window.CALC, key=this.activeKey(), spec=C.tosp(key);
+    if(!spec) return { rows:[], headers:[], totals:null };
+    var self=this, sel=this.effSelector(spec), s1=this.state.step1;
+    var rows=[], sumPf=0,sumAf=0,sumAsst=0,sumTot=0;
+    var hints = this._rowHints(key);
+    for(var i=0;i<5;i++){
+      var code=this.state.codes[i]||'';
+      var togOpts = spec.toggle ? spec.toggle(i) : null;
+      var togVal = this.effToggle(spec, i);
+      var r = code ? spec.row(code, i, { toggle:togVal, selector:sel, step1:s1 }) : null;
+      var cells;
+      if(!r){
+        cells=[{v:'',isToggle:false},{v:'',isToggle:!!togOpts,tog:togOpts,togVal:togVal},{v:''},{v:''},{v:''},{v:''}];
+      } else {
+        var tableToggle = !!(r.tableIsToggle && togOpts);
+        cells=[{v:r.ref,isToggle:false},{v:r.table,isToggle:tableToggle,tog:togOpts,togVal:togVal},{v:r.pf},{v:r.af},{v:r.asst},{v:r.total}];
+        if(C.NUM(r.pf)) sumPf+=r.pf;
+        if(C.NUM(r.af)) sumAf+=r.af;
+        if(C.NUM(r.asst)) sumAsst+=r.asst;
+        if(C.NUM(r.total)) sumTot+=r.total;
+      }
+      rows.push({ i:i, code:code, cells:cells, hint:hints[i] });
+    }
+    return { rows:rows, headers:spec.headers, totals:{ pf:sumPf, af:sumAf, asst:sumAsst, tot:sumTot } };
+  }
+
+  _rowHints(key){
+    if(key==='Singlife') return ['× 100% · main procedure','× 70%','× 70%','× 70%','× 70%'];
+    if(key==='Alliance') return ['× 100% · main','× 50% · 2nd','× 25% · 3rd','× 25% · 4th','× 25% · 5th'];
+    return ['','','','',''];
+  }
+
+  step1Total(){
+    var C=window.CALC, key=this.activeKey(), spec=C.step1spec(key);
+    if(!spec || !spec.hasConsult) return null;
+    var s1=this.state.step1;
+    return C.step1calc(key, s1.vt, s1.ti, s1.vp, s1.d);
+  }
+
+  save(){
+    var C=window.CALC; var comp=this.computeRows();
+    var s1=this.step1Total(); var consult = C.NUM(s1)?s1:0;
+    var grandEx = (comp.totals?comp.totals.tot:0) + consult;
+    var codes=this.state.codes.filter(function(c){return c;});
+    var entry={ id:Date.now(), ts:new Date().toISOString(), mode:this.state.mode,
+      insurer:this.activeInsurerName(), codes:this.state.codes.slice(), step1:Object.assign({},this.state.step1),
+      grand: grandEx*(this.state.gstOn?(1+this.state.gst/100):1) };
+    var saved=[entry].concat(this.state.saved).slice(0,12);
+    try{ localStorage.setItem('pfaf_saved', JSON.stringify(saved)); }catch(e){}
+    this.set({ saved:saved });
+  }
+  loadSaved(entry){
+    var patch={ mode:entry.mode, codes:entry.codes.slice(), step1:Object.assign({},entry.step1) };
+    if(entry.mode==='personal') patch.personal=entry.insurer;
+    if(entry.mode==='corp') patch.corp=entry.insurer;
+    this.set(patch);
+  }
+  deleteSaved(id){
+    var saved=this.state.saved.filter(function(e){return e.id!==id;});
+    try{ localStorage.setItem('pfaf_saved', JSON.stringify(saved)); }catch(e){}
+    this.set({ saved:saved });
+  }
+
+  exportPdf(){
+    var C=window.CALC; var comp=this.computeRows();
+    var s1=this.step1Total(); var consult=C.NUM(s1)?s1:0;
+    var grandEx=(comp.totals?comp.totals.tot:0)+consult;
+    var gstAmt=this.state.gstOn?grandEx*this.state.gst/100:0;
+    var incl=grandEx+gstAmt;
+    var m=this.money.bind(this);
+    var esc=function(x){return String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;');};
+    var rowsHtml=comp.rows.filter(function(r){return r.code;}).map(function(r){
+      return '<tr><td class="mono">'+esc(r.code)+'</td>'+r.cells.map(function(c,j){
+        var val=(typeof c.v==='number')?m(c.v):(c.v||'');
+        return '<td class="'+(j===0||j>0?'r':'')+'">'+esc(val)+'</td>';
+      }).join('')+'</tr>';
+    }).join('');
+    var heads=comp.headers.map(function(h){return '<th>'+esc(h)+'</th>';}).join('');
+    var meta=this.activeMeta();
+    var consultRow = C.NUM(s1)&&s1>0 ? '<div class="line"><span>Consultation fee</span><b>'+m(consult)+'</b></div>' : '';
+    var html='<!doctype html><html><head><meta charset="utf-8"><title>PF &amp; AF Quote</title>'+
+      '<style>body{font-family:-apple-system,Segoe UI,Arial,sans-serif;color:#1b232c;margin:40px;}'+
+      'h1{font-size:20px;margin:0 0 2px;}.sub{color:#64707c;font-size:13px;margin-bottom:24px;}'+
+      'table{width:100%;border-collapse:collapse;font-size:12px;margin:10px 0 20px;}'+
+      'th{background:#1b232c;color:#fff;padding:8px;text-align:center;font-weight:600;}'+
+      'td{padding:7px 8px;border-bottom:1px solid #e3e8ed;text-align:right;}td:first-child{text-align:left;}'+
+      '.mono{font-family:Consolas,monospace;font-weight:600;}'+
+      '.tot{max-width:340px;margin-left:auto;}.line{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid #eee;}'+
+      '.grand{display:flex;justify-content:space-between;padding:12px 0;font-size:17px;font-weight:700;border-top:2px solid #1b232c;margin-top:4px;}'+
+      '.foot{margin-top:30px;font-size:10px;color:#9aa5b1;}</style></head><body>'+
+      '<h1>PF &amp; AF Fee Quote</h1><div class="sub">'+esc(this.activeInsurerName())+' · '+esc(meta.typeLabel)+' · Rates updated '+esc(meta.rateDate)+'</div>'+
+      '<table><thead><tr>'+heads+'</tr></thead><tbody>'+(rowsHtml||'<tr><td colspan="7" style="text-align:center;color:#9aa5b1;">No TOSP codes entered</td></tr>')+'</tbody></table>'+
+      '<div class="tot">'+consultRow+
+      '<div class="line"><span>Surgeon fees (PF)</span><b>'+m(comp.totals.pf)+'</b></div>'+
+      '<div class="line"><span>Anaesthetist fees (AF)</span><b>'+m(comp.totals.af)+'</b></div>'+
+      '<div class="line"><span>Assistant surgeon</span><b>'+m(comp.totals.asst)+'</b></div>'+
+      '<div class="line"><span>Subtotal (ex-GST)</span><b>'+m(grandEx)+'</b></div>'+
+      (this.state.gstOn?'<div class="line"><span>GST ('+this.state.gst+'%)</span><b>'+m(gstAmt)+'</b></div>':'')+
+      '<div class="grand"><span>Total'+(this.state.gstOn?' incl. GST':'')+'</span><span>'+m(incl)+'</span></div></div>'+
+      '<div class="foot">Generated '+new Date().toLocaleString()+' · Indicative estimate based on MOH Benchmark Fees and insurer schedules. Not a formal quotation.</div>'+
+      '<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},300);}</scr'+'ipt></body></html>';
+    var w=window.open('','_blank'); if(w){ w.document.open(); w.document.write(html); w.document.close(); }
+  }
+
+  buildNav(){
+    var C=window.CALC, self=this, m=this.state.mode;
+    function item(mode,name,pending,active){
+      var sel = active;
+      var style='display:flex;align-items:center;gap:9px;width:100%;padding:8px 10px;border:none;border-radius:8px;font-size:12.5px;cursor:pointer;transition:background .12s;'+
+        (sel?'background:#e6f2f4;color:#0f5b69;font-weight:600;':'background:transparent;color:#455160;font-weight:500;');
+      var dot=pending?'#e0a92b':'#1d9e75';
+      var dotStyle='width:7px;height:7px;border-radius:50%;flex-shrink:0;display:inline-block;background:'+dot+';';
+      return { name:name, pending:pending, style:style, dotStyle:dotStyle, onSelect:function(){ self.pickMode(mode,name); } };
+    }
+    var selfItem=item('selfpay','Self Pay',false, m==='selfpay');
+    var pers=C.PERSONAL_ORDER.map(function(n){ return item('personal',n, C.PERSONAL[n].status!=='ready', m==='personal'&&self.state.personal===n); });
+    var corp=C.CORP_ORDER.map(function(n){ return item('corp',n, C.CORPORATE[n].status!=='ready', m==='corp'&&self.state.corp===n); });
+    var mohItem=item('moh','MOH Benchmark Fees',false, m==='moh');
+    return [ {label:'Self Pay', items:[selfItem]}, {label:'Personal Insurance', items:pers}, {label:'Corporate Insurance', items:corp}, {label:'Reference', items:[mohItem]} ];
+  }
+  setMohQuery(v){ this.set({ mohQuery:v }); }
+
+  renderVals(){
+    var C=window.CALC;
+    if(!C){ return { nav:[], header:{kicker:'Loading',title:'PF & AF Calculator',badge:'Loading rate tables…',badgeBg:'#eef1f4',badgeColor:'#64707c',insurer:''}, gst:{on:true,rate:9,onToggle:()=>{},onRate:()=>{}}, onSave:()=>{}, onExport:()=>{}, onClearRows:()=>{}, showStep1:false, showStep2:false, showCalc:true, showMoh:false, moh:{rows:[],query:'',count:0,total:0,capped:false,onSearch:function(){}}, pending:false, hasNotes:false, hasSaved:false, noSaved:true, savedCount:'', saved:[], footnotes:[], totals:[], step2:{headers:[],rows:[]}, step1:{fields:[]}, grand:{} }; }
+    var self=this, meta=this.activeMeta(), key=this.activeKey();
+    var pending = meta.status!=='ready';
+    var isSelf = this.state.mode==='selfpay';
+    var showMoh = this.state.mode==='moh';
+    // MOH reference view
+    var mohObj={rows:[],query:this.state.mohQuery||'',count:0,total:0,capped:false,onSearch:function(e){ self.setMohQuery(e.target.value); }};
+    if(showMoh){
+      var data=window.MOH_DATA||{}, keys=Object.keys(data); mohObj.total=keys.length;
+      var q=(this.state.mohQuery||'').trim().toUpperCase(), matched=[];
+      for(var mi=0;mi<keys.length;mi++){ var cd=keys[mi], dd=data[cd];
+        if(q){ if(cd.indexOf(q)===-1 && (dd.d||'').toUpperCase().indexOf(q)===-1 && (dd.t||'').toUpperCase()!==q) continue; }
+        matched.push(cd); }
+      matched.sort(); mohObj.count=matched.length; mohObj.capped=matched.length>400;
+      var capped=matched.slice(0,400); mohObj.shown=capped.length;
+      mohObj.rows=capped.map(function(cd,ri){ var d=data[cd]; return {
+        code:cd, desc:d.d||'', table:d.t||'\u2014',
+        pl:self.money(d.pl), pu:self.money(d.pu),
+        al:d.al?self.money(d.al):'\u2014', au:d.au?self.money(d.au):'\u2014',
+        rowBg:(ri%2?'background:#fafbfc;':'background:#fff;') }; });
+    }
+
+    // header
+    var badge = this.activeInsurerName()+'  ·  '+meta.typeLabel+'  ·  Updated '+meta.rateDate;
+    var header={ kicker: (isSelf?'Self Pay':(this.state.mode==='corp'?'Corporate':'Personal'))+' · PF & AF',
+      title:'PF & AF Calculator', badge:badge,
+      badgeBg: pending?'#fdeccd':'#e6f2f4', badgeColor: pending?'#9a6a00':'#0f5b69',
+      insurer:this.activeInsurerName() };
+    if(showMoh){ header.kicker='Reference · Fee Schedule'; header.badge='MOH Benchmark Fees · '+mohObj.total+' procedures · Effective 01/01/2025'; header.badgeBg='#e6f2f4'; header.badgeColor='#0f5b69'; }
+
+    // step1
+    var spec = C.step1spec(key);
+    var showStep1 = !isSelf && !pending && !!spec;
+    var step1={ fields:[], note:'', noteBg:'#f6f8fa', total:'—' };
+    if(showStep1){
+      var s1=this.state.step1;
+      step1.note = spec.note;
+      step1.noteBg = spec.warn ? '#fffaf0' : '#f6f8fa';
+      var defs=[
+        {k:'vt', getOpts:function(){return spec.visitTypes;}},
+        {k:'ti', getOpts:function(){return spec.timing?spec.timing(s1.vt):null;}},
+        {k:'vp', getOpts:function(){return spec.vpd?spec.vpd(s1.vt):null;}},
+        {k:'d',  getOpts:function(){return ['1','2','3','4','5','6','7','8','9','10'];}}
+      ];
+      step1.fields = defs.map(function(def){
+        var opts = spec.hasConsult ? def.getOpts() : null;
+        var enabled = spec.hasConsult && !!opts;
+        return { label: spec.labels[def.k], labelColor: enabled?'#2d3748':'#aab3bc',
+          disabled:!enabled, enabled:enabled, options:opts||[], value:s1[def.k],
+          onChange:function(e){ self.setField(def.k, e.target.value); } };
+      });
+      var t=this.step1Total();
+      step1.total = C.NUM(t)?this.money(t):'—';
+    }
+
+    // step2
+    var showStep2 = !pending;
+    var comp = showStep2 ? this.computeRows() : { rows:[], headers:[], totals:{pf:0,af:0,asst:0,tot:0} };
+    var thBase='padding:9px 8px;font-size:9.5px;font-weight:700;letter-spacing:.02em;color:#fff;background:#2a3542;text-align:center;white-space:nowrap;';
+    var headers = comp.headers.map(function(h,i){ return { text:h, style: thBase + (i===0?'text-align:left;padding-left:14px;':'') }; });
+    var rows = comp.rows.map(function(r){
+      var cells=r.cells.map(function(c,j){
+        var align = (j===1)?'center':'right';
+        var tdStyle='padding:8px;border-bottom:1px solid #eef1f4;vertical-align:middle;text-align:'+align+';';
+        if(c.isToggle){
+          return { isToggle:true, isText:false, tdStyle:tdStyle, options:c.tog||[], value:c.togVal,
+            onChange:(function(idx){return function(e){ self.setToggle(idx, e.target.value); };})(r.i) };
+        }
+        var txt;
+        if(c.v==='' || c.v==null) txt='';
+        else if(typeof c.v==='number') txt=self.money(c.v);
+        else txt=c.v;
+        var color=self.cellColor(c.v), weight=(j===5)?'700':'500';
+        var italic=(c.v==='Not Payable'||c.v==='Not Applicable')?'font-style:italic;':'';
+        return { isToggle:false, isText:true, tdStyle:tdStyle, text:txt,
+          style:'font-size:12px;font-family:\'IBM Plex Mono\',monospace;color:'+color+';font-weight:'+weight+';'+italic };
+      });
+      return { i:r.i, code:r.code, placeholder:'e.g. SA714A', hint:r.hint, hasHint:!!r.hint,
+        rowStyle:(r.i%2?'background:#fafbfc;':'background:#fff;'),
+        onCode:function(e){ self.setCode(r.i, e.target.value); },
+        cells:cells };
+    });
+    // section selector + data note
+    var sspec=C.tosp(key), sSel=sspec&&sspec.sel?sspec.sel:null, effSel=this.effSelector(sspec);
+    var dataNote=pending?'':C.dataNote(key);
+
+    // totals + grand
+    var consultT=this.step1Total(); var consult=C.NUM(consultT)?consultT:0;
+    var grandEx=(comp.totals.tot)+consult;
+    var totals=[];
+    if(showStep1) totals.push({label:'Consultation', value:this.money(consult), dot:'#2563a8', color:'#2563a8'});
+    totals.push({label:'Surgeon (PF)', value:this.money(comp.totals.pf), dot:'#1a7a5e', color:'#1a7a5e'});
+    totals.push({label:'Anaesthetist (AF)', value:this.money(comp.totals.af), dot:'#9a6a00', color:'#9a6a00'});
+    totals.push({label:'Assistant', value:this.money(comp.totals.asst), dot:'#6b3fa0', color:'#6b3fa0'});
+    var gstAmt=this.state.gstOn?grandEx*this.state.gst/100:0;
+    var grand={ label:'Grand Total (ex-GST)', ex:this.money(grandEx), gstAmt:this.money(gstAmt), incl:this.money(grandEx+gstAmt) };
+
+    // footnotes
+    var fns=pending?[]:C.footnotes(key);
+    var footnotes=fns.map(function(f){return {title:f.title, body:f.body, tag:f.tag};});
+
+    // saved
+    var saved=this.state.saved.map(function(e){
+      var d=new Date(e.ts);
+      return { label:e.insurer, sub:d.toLocaleDateString()+' · '+d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}),
+        amount:self.money(e.grand), onLoad:function(){ self.loadSaved(e); }, onDelete:function(){ self.deleteSaved(e.id); } };
+    });
+
+    return {
+      nav:this.buildNav(),
+      header:header,
+      gst:{ on:this.state.gstOn, rate:this.state.gst, onToggle:function(){self.toggleGst();}, onRate:function(e){self.setGstRate(e.target.value);} },
+      onSave:function(){self.save();}, onExport:function(){self.exportPdf();}, onClearRows:function(){self.clearRows();},
+      pending:pending, pendingReason:meta.reason||'',
+      showStep1:showStep1, step1:step1,
+      showStep2:showStep2, step2:{ num:isSelf?'':'2', headers:headers, rows:rows,
+        hasSelector:!!sSel, selLabel:sSel?sSel.label:'', selValue:effSel||'', selOptions:sSel?sSel.options:[],
+        onSelect:function(e){ self.setSelector(e.target.value); },
+        dataNote:dataNote },
+      totals:totals, grand:grand,
+      showCalc:!showMoh, showMoh:showMoh, moh:mohObj,
+      hasNotes:!showMoh && footnotes.length>0, notesTitle:this.activeInsurerName()+' — Notes & Assumptions', footnotes:footnotes,
+      hasSaved:saved.length>0, noSaved:saved.length===0, savedCount:saved.length?String(saved.length):'', saved:saved
+    };
+  }
+}
+</script>
+</body>
+</html>
